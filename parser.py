@@ -4,44 +4,34 @@ from PIL import Image
 from io import BytesIO
 import json
 import datetime
-import re
 
 def get_actual_image_url():
-    """Шукає посилання на останню картинку ГПВ на сайті обленерго"""
-    page_url = "https://www.toe.com.ua/news/71" # Сторінка, яку ви надіслали
-    response = requests.get(page_url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Шукаємо всі зображення і фільтруємо ті, що схожі на графік (містять GPV)
-    for img in soup.find_all('img'):
-        src = img.get('src', '')
-        if 'GPV' in src:
-            if src.startswith('http'):
-                return src
-            return "https://www.toe.com.ua" + src
-    return "https://api-toe-poweron.inneti.net/media/2026/01/697325479ad93_GPV.png" # Резервне
+    try:
+        page_url = "https://www.toe.com.ua/news/71"
+        response = requests.get(page_url, timeout=15)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        for img in soup.find_all('img'):
+            src = img.get('src', '')
+            if 'GPV' in src:
+                return src if src.startswith('http') else "https://www.toe.com.ua" + src
+    except: pass
+    return "https://api-toe-poweron.inneti.net/media/2026/01/6973c03093be6_GPV.png"
 
 def get_status_by_color(rgb):
     r, g, b = rgb[:3]
-    if g > 150 and r < 150: return 1  # Зелений
-    if r > 180 and g < 100: return 0  # Червоний
-    if r > 200 and g > 180: return 2  # Жовтий
+    if g > 150 and r < 150: return 1 # Зелений
+    if r > 180 and g < 100: return 0 # Червоний
+    if r > 200 and g > 180: return 2 # Жовтий
     return 1
 
 def run_parser():
     img_url = get_actual_image_url()
-    print(f"Аналізуємо картинку: {img_url}")
-    
     response = requests.get(img_url)
     img = Image.open(BytesIO(response.content)).convert('RGB')
-    
-    # Координати під вашу останню картинку (110 - старт годин, 125 - старт рядків)
     x_start, y_start = 110, 125
-    step_x, step_y = 38.5, 33 # Крок для кожної підгрупи
-
+    step_x, step_y = 38.5, 33 
     results = {}
     subgroups = ["1.1", "1.2", "2.1", "2.2", "3.1", "3.2", "4.1", "4.2", "5.1", "5.2", "6.1", "6.2"]
-
     for i, name in enumerate(subgroups):
         y = int(y_start + (i * step_y))
         row_status = []
@@ -50,12 +40,10 @@ def run_parser():
             pixel = img.getpixel((x, y))
             row_status.append(get_status_by_color(pixel))
         results[name] = row_status
-
     final_data = {
         "last_update": datetime.datetime.now().strftime("%d.%m.%Y %H:%M"),
         "groups": results
     }
-
     with open('schedule.json', 'w', encoding='utf-8') as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
 
