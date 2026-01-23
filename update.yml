@@ -1,0 +1,32 @@
+name: Update Schedule Data
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Запуск щогодини
+  workflow_dispatch: # Можливість запустити вручну
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run parser
+        run: python parser.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add schedule.json
+          git commit -m "Auto-update schedule" || exit 0
+          git push
