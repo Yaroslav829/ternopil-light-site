@@ -29,4 +29,6 @@ jobs:
           git config --global user.email "action@github.com"
           git add schedule.json
           git commit -m "Auto-update schedule" || exit 0
+          - name: Install dependencies
+        run: pip install requests Pillow
           git push
