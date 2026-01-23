@@ -116,7 +116,7 @@
             localStorage.setItem(STORAGE_KEY, selectedGroup);
 
             try {
-                // Отримання даних (кешування ігноруємо через timestamp)
+                // Отримання даних з вашого schedule.json
                 const response = await fetch('schedule.json?t=' + Date.now());
                 if (!response.ok) throw new Error();
                 const data = await response.json();
@@ -129,20 +129,20 @@
                 const icon = document.getElementById('status-icon');
                 const desc = document.getElementById('status-desc');
 
-                // Логіка статусів
-                if (currentStatus === 1) { // Світло є
+                // Логіка статусів за кольорами з картинки ТОЕ
+                if (currentStatus === 1) { // Світло є (Зелений)
                     card.style.borderColor = "rgba(34,197,94,0.4)";
                     title.innerText = "Світло є";
                     title.className = "text-2xl font-bold uppercase tracking-widest text-green-400";
                     icon.innerText = "💡";
                     desc.innerText = `Група ${selectedGroup} зараз заживлена`;
-                } else if (currentStatus === 0) { // Вимкнення
+                } else if (currentStatus === 0) { // Вимкнення (Червоний)
                     card.style.borderColor = "rgba(239,68,68,0.4)";
                     title.innerText = "Відключення";
                     title.className = "text-2xl font-bold uppercase tracking-widest text-red-400";
                     icon.innerText = "🌑";
                     desc.innerText = `У групі ${selectedGroup} триває вимкнення`;
-                } else { // Можливе вимкнення
+                } else { // Можливе вимкнення (Жовтий)
                     card.style.borderColor = "rgba(234,179,8,0.4)";
                     title.innerText = "Можливе вимкнення";
                     title.className = "text-2xl font-bold uppercase tracking-widest text-yellow-400";
