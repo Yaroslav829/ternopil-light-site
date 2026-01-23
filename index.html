@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Світло Тернопіль | UA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+        .card-blur {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-on { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .glow-off { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-md w-full space-y-4">
+        <div class="flex justify-between items-end px-2">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Є-Світло</h1>
+                <p class="text-slate-400 text-sm">Тернопільська громада</p>
+            </div>
+            <div id="live-clock" class="text-xl font-mono text-yellow-500">12:00:00</div>
+        </div>
+
+        <div id="main-card" class="card-blur rounded-[2rem] p-8 text-center transition-all duration-500">
+            <div id="status-icon" class="text-6xl mb-4">⌛</div>
+            <h2 id="status-title" class="text-2xl font-bold uppercase tracking-widest">Визначаємо...</h2>
+            <div id="status-desc" class="text-slate-400 mt-2">Завантаження даних з Е-Тернопіль</div>
+        </div>
+
+        <div class="card-blur rounded-2xl p-4 flex items-center justify-between">
+            <span class="text-sm font-medium">Ваша група в Е-Тернопіль:</span>
+            <select id="group-select" class="bg-slate-800 border-none rounded-lg px-3 py-1 text-yellow-500 focus:ring-2 focus:ring-yellow-500 outline-none">
+                <option value="1">Група 1</option>
+                <option value="2">Група 2</option>
+                <option value="3">Група 3</option>
+                <option value="4">Група 4</option>
+                <option value="5">Група 5</option>
+                <option value="6">Група 6</option>
+            </select>
+        </div>
+
+        <div class="card-blur rounded-2xl p-6">
+            <h3 class="text-xs uppercase text-slate-500 mb-4 font-bold tracking-widest text-center">Добовий прогноз відключень</h3>
+            <div id="timeline" class="flex gap-1 h-12">
+                </div>
+            <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-mono">
+                <span>00:00</span>
+                <span>06:00</span>
+                <span>12:00</span>
+                <span>18:00</span>
+                <span>23:59</span>
+            </div>
+        </div>
+
+        <p class="text-center text-[10px] text-slate-600 uppercase tracking-tighter">
+            Дані синхронізовано з додатком Е-Тернопіль та ТОЕ
+        </p>
+    </div>
+
+    <script>
+        // Приклад даних (можна замінити на завантаження з JSON-файлу)
+        // 1 = Світло є, 0 = Відключення, 2 = Можливе відключення
+        const dailySchedules = {
+            1: [1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1],
+            2: [0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1],
+            3: [1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0],
+            4: [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+            5: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+            6: [1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0]
+        };
+
+        function updateApp() {
+            const now = new Date();
+            const hour = now.getHours();
+            const group = document.getElementById('group-select').value;
+            const schedule = dailySchedules[group];
+            const currentStatus = schedule[hour];
+
+            // Годинник
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString('uk-UA');
+
+            // Оновлення головної картки
+            const card = document.getElementById('main-card');
+            const title = document.getElementById('status-title');
+            const icon = document.getElementById('status-icon');
+            const desc = document.getElementById('status-desc');
+
+            if (currentStatus === 1) {
+                card.className = "card-blur rounded-[2rem] p-8 text-center transition-all duration-500 glow-on border-green-500/30";
+                title.innerText = "Світло є";
+                title.className = "text-2xl font-bold uppercase tracking-widest text-green-400";
+                icon.innerText = "⚡";
+                desc.innerText = "Ваша черга зараз заживлена";
+            } else if (currentStatus === 0) {
+                card.className = "card-blur rounded-[2rem] p-8 text-center transition-all duration-500 glow-off border-red-500/30";
+                title.innerText = "Відключення";
+                title.className = "text-2xl font-bold uppercase tracking-widest text-red-400";
+                icon.innerText = "🌑";
+                desc.innerText = "Триває планове відключення";
+            } else {
+                title.innerText = "Можливе відключення";
+                icon.innerText = "⚠️";
+            }
+
+            // Генерація таймлайну
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            schedule.forEach((status, h) => {
+                const bar = document.createElement('div');
+                bar.className = `flex-1 rounded-sm ${h === hour ? 'ring-2 ring-white scale-y-110' : 'opacity-40'} ` + 
+                                (status === 1 ? 'bg-green-500' : (status === 0 ? 'bg-red-500' : 'bg-yellow-500'));
+                timeline.appendChild(bar);
+            });
+        }
+
+        setInterval(updateApp, 1000);
+        document.getElementById('group-select').onchange = updateApp;
+        updateApp();
+    </script>
+</body>
+</html>
