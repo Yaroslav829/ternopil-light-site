@@ -13,7 +13,7 @@ def get_actual_image_url():
         for img in soup.find_all('img'):
             src = img.get('src', '')
             if 'GPV' in src:
-                return src if src.startswith('http') else "https://www.toe.com.ua" + src
+                return src if src.startswith('http') else "https://www.toe.com.ua/news/71" + src
     except: pass
     return "https://api-toe-poweron.inneti.net/media/2026/01/6973c03093be6_GPV.png"
 
