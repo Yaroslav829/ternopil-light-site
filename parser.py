@@ -28,8 +28,10 @@ def run_parser():
     img_url = get_actual_image_url()
     response = requests.get(img_url)
     img = Image.open(BytesIO(response.content)).convert('RGB')
-    x_start, y_start = 110, 125
-    step_x, step_y = 38.5, 33 
+    x_start = 108   # Центр першої клітинки (00:00) по горизонталі
+    y_start = 122   # Центр першого рядка (Група 1.1) по вертикалі
+    step_x = 38.6   # Ширина однієї години (середня)
+    step_y = 33.2   # Висота одного рядка підгрупи
     results = {}
     subgroups = ["1.1", "1.2", "2.1", "2.2", "3.1", "3.2", "4.1", "4.2", "5.1", "5.2", "6.1", "6.2"]
     for i, name in enumerate(subgroups):
