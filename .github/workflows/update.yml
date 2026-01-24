@@ -2,5 +2,28 @@ name: Update Schedule Data
 on:
   push:
     paths:
-      - 'graph.png'  # Запускати тільки коли ти міняєш картинку
+      - 'graph.png'  # Запуск тільки тоді, коли ви завантажили нову картинку
   workflow_dispatch: # Кнопка для ручного запуску
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install Pillow
+      - name: Run parser
+        run: python parser.py
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add schedule.json
+          git commit -m "Оновлено дані з вашої картинки" || exit 0
+          git push
