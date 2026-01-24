@@ -1,30 +1,28 @@
 name: Update Schedule Data
 on:
   schedule:
-    - cron: '*/30 * * * *' # Оновлювати кожні 30 хвилин
-  workflow_dispatch: # Дозволяє запускати вручну кнопкою
+    - cron: '*/30 * * * *' # Кожні 30 хвилин
+  workflow_dispatch: # Кнопка для ручного запуску
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
-      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 Pillow # Встановлюємо інструменти для роботи з фото
-        
+        run: pip install requests beautifulsoup4 Pillow # Бібліотеки для обробки зображень
       - name: Run parser
-        run: python parser.py # Запускаємо твій скрипт розпізнавання
-        
-      - name: Commit and push changes
+        run: python parser.py
+      - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add schedule.json
-          git commit -m "Авто-оновлення графіка" || exit 0
+          git commit -m "Auto-update schedule" || exit 0
           git push
