@@ -1,39 +1,73 @@
-import json
-import datetime
-from PIL import Image
+const axios = require('axios');
+const cheerio = require('cheerio');
 
-def get_status_by_color(rgb):
-    r, g, b = rgb[:3]
-    if r > 180 and g < 100: return 0  # Червоний - немає світла
-    if g > 160 and r < 160: return 1  # Зелений - є світло
-    return 2 # Жовтий або інше
+async function getTernopilLightData() {
+    const url = "https://www.toe.com.ua/news/71";
+    
+    try {
+        // 1. Загружаем страницу
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
 
-def run_parser():
-    try:
-        img = Image.open("graph.png").convert('RGB')
-        # Координати центрів клітинок (підберіть один раз точно)
-        x_start, y_start = 108, 122
-        step_x, step_y = 38.65, 33.25
-        
-        results = {}
-        groups = ["1.1", "1.2", "2.1", "2.2", "3.1", "3.2", "4.1", "4.2", "5.1", "5.2", "6.1", "6.2"]
-        
-        for i, name in enumerate(groups):
-            y = int(y_start + (i * step_y))
-            row = []
-            for hour in range(24):
-                x = int(x_start + (hour * step_x))
-                row.append(get_status_by_color(img.getpixel((x, y))))
-            results[name] = row
+        const $ = cheerio.load(data);
+        const result = {
+            lastUpdate: new Date().toISOString(),
+            groups: {}
+        };
 
-        data = {
-            "last_update": datetime.datetime.now().strftime("%d.%m %H:%M"),
-            "groups": results
+        // 2. Ищем контейнер с текстом
+        const content = $('.item-page');
+        let currentGroup = null;
+
+        // 3. Логика сбора групп и улиц
+        // Проходим по всем элементам внутри контента
+        content.find('p, span, strong').each((i, el) => {
+            const text = $(el).text().trim();
+            
+            // Регулярное выражение для поиска заголовка группы (н-р: "1.1. група" или "Група 2.1")
+            const groupMatch = text.match(/(\d\.\d)\.?\s*група/i);
+            
+            if (groupMatch) {
+                currentGroup = groupMatch[1]; // Получаем "1.1", "2.1" и т.д.
+                result.groups[currentGroup] = [];
+            } else if (currentGroup && text.length > 5) {
+                // Если мы внутри группы, добавляем текст (список улиц)
+                // Очищаем текст от лишних переносов строк
+                const cleanText = text.replace(/\s+/g, ' ');
+                result.groups[currentGroup].push(cleanText);
+            }
+        });
+
+        // Конвертируем массивы строк в одну строку для каждой группы
+        for (let group in result.groups) {
+            result.groups[group] = result.groups[group].join(' ');
         }
-        with open('schedule.json', 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"Помилка: {e}. Перевірте, чи файл названо graph.png")
 
-if __name__ == "__main__":
-    run_parser()
+        return result;
+
+    } catch (error) {
+        console.error("Ошибка при парсинге сайта ТОЕ:", error.message);
+        return null;
+    }
+}
+
+// Пример функции поиска улицы в группах
+async function findGroupByStreet(streetName) {
+    const data = await getTernopilLightData();
+    if (!data) return "Ошибка получения данных";
+
+    const searchName = streetName.toLowerCase();
+    for (let [group, streets] of Object.entries(data.groups)) {
+        if (streets.toLowerCase().includes(searchName)) {
+            return `Улица найденна в группе: ${group}`;
+        }
+    }
+    return "Группа для данной улицы не найдена";
+}
+
+// Запуск для проверки
+getTernopilLightData().then(res => console.log(JSON.stringify(res, null, 2)));
+
