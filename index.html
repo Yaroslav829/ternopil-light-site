@@ -3,64 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Є-Світло Тернопіль | UA</title>
+    <title>Є-Світло Тернопіль</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .card-blur { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .status-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+        body { font-family: 'Inter', sans-serif; background: #020617; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; }
+        .card-blur { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        
+        /* Динамічні тіні для статусів */
+        .glow-green { box-shadow: 0 0 40px -10px rgba(34, 197, 94, 0.3); border-color: rgba(34, 197, 94, 0.4); }
+        .glow-red { box-shadow: 0 0 40px -10px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.4); }
+        .glow-yellow { box-shadow: 0 0 40px -10px rgba(234, 179, 8, 0.3); border-color: rgba(234, 179, 8, 0.4); }
+
+        .status-pulse { animation: pulse 2.5s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.1); filter: brightness(1.3); } }
+        
+        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
     </style>
 </head>
 <body class="p-4">
-    <div class="max-w-md w-full space-y-4">
-        <div class="flex justify-between items-end px-2">
+    <div class="max-w-md w-full space-y-6">
+        <div class="flex justify-between items-center px-2">
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-white">Є-Світло</h1>
-                <p class="text-slate-400 text-sm">Тернопільська громада</p>
+                <h1 class="text-4xl font-extrabold tracking-tighter text-white">Є-Світло</h1>
+                <p class="text-slate-400 text-xs font-medium uppercase tracking-widest">Тернопільська обл.</p>
             </div>
-            <div id="live-clock" class="text-xl font-mono text-yellow-500">00:00:00</div>
+            <div id="live-clock" class="text-2xl font-black text-yellow-500 drop-shadow-md">00:00:00</div>
         </div>
 
-        <div id="main-card" class="card-blur rounded-[2rem] p-8 text-center transition-all duration-500 shadow-2xl">
-            <div id="status-icon" class="text-6xl mb-4 status-pulse">⌛</div>
-            <h2 id="status-title" class="text-2xl font-bold uppercase tracking-widest">ОНОВЛЕННЯ...</h2>
-            <div id="status-desc" class="text-slate-400 mt-2 text-sm text-center">Налаштовуємо графік, зачекайте хвилину</div>
+        <div id="main-card" class="card-blur rounded-[2.5rem] p-10 text-center transition-all duration-700 shadow-2xl relative overflow-hidden">
+            <div id="status-icon" class="text-7xl mb-6 status-pulse inline-block">⌛</div>
+            <h2 id="status-title" class="text-3xl font-black uppercase tracking-tighter transition-colors duration-500">Завантаження</h2>
+            <div id="status-desc" class="text-slate-300 mt-3 text-sm font-medium">Отримуємо дані з сервера...</div>
         </div>
 
-        <div class="card-blur rounded-2xl p-4 flex items-center justify-between">
-            <span class="text-sm font-medium">Ваша підгрупа:</span>
-            <select id="group-select" class="bg-slate-800 border-none rounded-lg px-3 py-1 text-yellow-500 outline-none cursor-pointer">
-                <option value="1.1">Група 1.1</option><option value="1.2">Група 1.2</option>
-                <option value="2.1">Група 2.1</option><option value="2.2">Група 2.2</option>
-                <option value="3.1">Група 3.1</option><option value="3.2">Група 3.2</option>
-                <option value="4.1">Група 4.1</option><option value="4.2">Група 4.2</option>
-                <option value="5.1">Група 5.1</option><option value="5.2">Група 5.2</option>
-                <option value="6.1">Група 6.1</option><option value="6.2">Група 6.2</option>
-            </select>
+        <div class="card-blur rounded-3xl p-5 flex items-center justify-between shadow-lg">
+            <span class="text-sm font-semibold text-slate-400 ml-2">Ваша підгрупа</span>
+            <div class="relative">
+                <select id="group-select" class="bg-slate-800/80 hover:bg-slate-700 text-yellow-500 font-bold rounded-2xl px-5 py-2 outline-none cursor-pointer transition-all border border-white/5">
+                    <option value="1.1">Група 1.1</option><option value="1.2">Група 1.2</option>
+                    <option value="2.1">Група 2.1</option><option value="2.2">Група 2.2</option>
+                    <option value="3.1">Група 3.1</option><option value="3.2">Група 3.2</option>
+                    <option value="4.1">Група 4.1</option><option value="4.2">Група 4.2</option>
+                    <option value="5.1">Група 5.1</option><option value="5.2">Група 5.2</option>
+                    <option value="6.1">Група 6.1</option><option value="6.2">Група 6.2</option>
+                </select>
+            </div>
         </div>
 
-        <div class="card-blur rounded-2xl p-6">
-            <h3 class="text-xs uppercase text-slate-500 mb-4 font-bold tracking-widest text-center">ПРОГНОЗ НА ДОБУ</h3>
-            <div id="timeline" class="flex gap-1 h-12"></div>
-            <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-mono">
+        <div class="card-blur rounded-[2rem] p-6 shadow-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">Прогноз на добу</h3>
+                <span id="update-time" class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">--:--</span>
+            </div>
+            <div id="timeline" class="flex gap-1.5 h-16 items-end"></div>
+            <div class="flex justify-between mt-4 text-[10px] text-slate-500 font-black uppercase tracking-tighter opacity-60">
                 <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <a href="https://www.toe.com.ua/" target="_blank" class="card-blur p-3 rounded-xl text-center text-[11px] uppercase tracking-wider hover:bg-white/10">САЙТ TOE</a>
-            <a href="https://t.me/ternopiloblernergo_bot" target="_blank" class="card-blur p-3 rounded-xl text-center text-[11px] uppercase tracking-wider hover:bg-white/10">TELEGRAM БОТ</a>
+            <a href="https://www.toe.com.ua/" target="_blank" class="card-blur py-4 rounded-2xl text-center text-[10px] font-black uppercase tracking-[0.15em] hover:bg-white/5 transition-all active:scale-95">Офіційний сайт</a>
+            <a href="https://t.me/ternopiloblernergo_bot" target="_blank" class="card-blur py-4 rounded-2xl text-center text-[10px] font-black uppercase tracking-[0.15em] hover:bg-white/5 transition-all active:scale-95 text-sky-400">Telegram Бот</a>
         </div>
     </div>
 
     <script>
         const STORAGE_KEY = 'ternopil_saved_group';
+        
         async function updateApp() {
             const now = new Date();
             const hour = now.getHours();
-            document.getElementById('live-clock').innerText = now.toLocaleTimeString('uk-UA');
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString('uk-UA', { hour12: false });
+            
             const groupSelect = document.getElementById('group-select');
             if (!groupSelect.dataset.initialized) {
                 groupSelect.value = localStorage.getItem(STORAGE_KEY) || "1.1";
@@ -70,8 +85,7 @@
             localStorage.setItem(STORAGE_KEY, selectedGroup);
 
             try {
-                // Пряме посилання з обходом кешу
-                const response = await fetch('schedule.json?v=' + now.getTime());
+                const response = await fetch('schedule.json?cache=' + Math.floor(Date.now()/60000));
                 const data = await response.json();
                 const schedule = data.groups[selectedGroup];
                 const currentStatus = schedule[hour];
@@ -80,34 +94,60 @@
                 const title = document.getElementById('status-title');
                 const icon = document.getElementById('status-icon');
                 const desc = document.getElementById('status-desc');
+                const updateTime = document.getElementById('update-time');
 
+                updateTime.innerText = `Оновлено: ${data.last_update}`;
+                card.classList.remove('glow-green', 'glow-red', 'glow-yellow');
+
+                // Логіка згідно з домовленістю: 1=Є, 0=Немає, 2=Сіра зона
                 if (currentStatus === 1) {
-                    card.style.borderColor = "rgba(34,197,94,0.4)";
-                    title.innerText = "Світло є"; title.className = "text-2xl font-bold uppercase text-green-400";
-                    icon.innerText = "💡"; desc.innerText = `Група ${selectedGroup} заживлена`;
+                    card.classList.add('glow-green');
+                    title.innerText = "Світло є";
+                    title.className = "text-3xl font-black uppercase tracking-tighter text-green-400";
+                    icon.innerText = "💡";
+                    desc.innerText = `Група ${selectedGroup} заживлена стабільно`;
                 } else if (currentStatus === 0) {
-                    card.style.borderColor = "rgba(239,68,68,0.4)";
-                    title.innerText = "Відключення"; title.className = "text-2xl font-bold uppercase text-red-400";
-                    icon.innerText = "🌑"; desc.innerText = `У групі ${selectedGroup} немає світла`;
+                    card.classList.add('glow-red');
+                    title.innerText = "Відключення";
+                    title.className = "text-3xl font-black uppercase tracking-tighter text-red-500";
+                    icon.innerText = "🌑";
+                    desc.innerText = `У групі ${selectedGroup} тривають обмеження`;
                 } else {
-                    card.style.borderColor = "rgba(234,179,8,0.4)";
-                    title.innerText = "Можливе вимкнення"; title.className = "text-2xl font-bold uppercase text-yellow-400";
-                    icon.innerText = "⚠️"; desc.innerText = `Ймовірні обмеження для групи ${selectedGroup}`;
+                    card.classList.add('glow-yellow');
+                    title.innerText = "Можливе вимкнення";
+                    title.className = "text-3xl font-black uppercase tracking-tighter text-yellow-500";
+                    icon.innerText = "⏳";
+                    desc.innerText = `Ймовірні перебої для групи ${selectedGroup}`;
                 }
 
                 const timeline = document.getElementById('timeline');
                 timeline.innerHTML = '';
                 schedule.forEach((status, h) => {
                     const bar = document.createElement('div');
-                    bar.className = `flex-1 rounded-sm transition-all ${h === hour ? 'ring-2 ring-white scale-y-125 mx-0.5' : 'opacity-40'} ` + 
-                                    (status === 1 ? 'bg-green-500' : (status === 0 ? 'bg-red-500' : 'bg-yellow-500'));
+                    const isActive = h === hour;
+                    
+                    // Стилізація стовпчиків
+                    let statusColor = status === 1 ? 'bg-green-500' : (status === 0 ? 'bg-red-600' : 'bg-yellow-500');
+                    let heightClass = status === 1 ? 'h-full' : (status === 0 ? 'h-1/3' : 'h-2/3');
+                    
+                    bar.className = `flex-1 ${statusColor} rounded-full transition-all duration-500 ${heightClass} ${isActive ? 'ring-4 ring-white shadow-lg opacity-100' : 'opacity-20 hover:opacity-50'}`;
                     timeline.appendChild(bar);
                 });
-                desc.innerHTML += `<br><span class="text-[10px] opacity-40 mt-2 block uppercase tracking-widest">Оновлено: ${data.last_update}</span>`;
-            } catch (e) { console.log("Чекаємо на дані..."); }
+            } catch (e) { 
+                document.getElementById('status-desc').innerText = "Помилка завантаження schedule.json";
+            }
         }
-        document.getElementById('group-select').addEventListener('change', updateApp);
-        setInterval(updateApp, 1000); updateApp();
+
+        document.getElementById('group-select').addEventListener('change', () => {
+            updateApp();
+            // Додаємо легку вібрацію при зміні (на смартфонах)
+            if (window.navigator.vibrate) window.navigator.vibrate(10);
+        });
+
+        setInterval(updateApp, 1000);
+        updateApp();
     </script>
 </body>
 </html>
+
+
