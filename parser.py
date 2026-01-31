@@ -1,68 +1,56 @@
 import cloudscraper
 from bs4 import BeautifulSoup
+import json
 import re
 
-class TernopilLightParser:
+class TernopilParser:
     def __init__(self):
-        # Используем cloudscraper для обхода блокировок
         self.scraper = cloudscraper.create_scraper()
-        self.base_url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://www.toe.com.ua/'
-        }
+        self.url_news = "https://www.toe.com.ua/news/71"
+        self.url_search = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
 
-    def get_group_by_street(self, street_name):
-        """Находит группу для конкретной улицы через внутренний поиск сайта"""
-        try:
-            # Отправляем POST запрос, как это делает форма на сайте
-            payload = {'search': street_name}
-            response = self.scraper.post(self.base_url, data=payload, headers=self.headers)
+    def get_actual_data(self):
+        print("Подключение к сайту ТОЕ...")
+        response = self.scraper.get(self.url_news)
+        if response.status_code != 200:
+            print("Ошибка доступа к сайту")
+            return None
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 1. Пытаемся найти ссылку на актуальный график (картинку)
+        img_tag = soup.find('img', src=re.compile(r'grafik', re.I))
+        if img_tag:
+            img_url = "https://www.toe.com.ua" + img_tag['src']
+            print(f"Найдена ссылка на новый график: {img_url}")
+            # Здесь можно добавить код для скачивания в graph.png
+
+        # 2. Собираем группы и улицы (теперь это большой текстовый блок)
+        content = soup.find('div', {'class': 'item-page'})
+        schedule_dict = {}
+        
+        if content:
+            text = content.get_text(separator="\n")
+            # Разбиваем текст по группам (1.1, 1.2 и т.д.)
+            groups = re.split(r'(\d\.\d)\s*група/підгрупа', text)
             
-            if response.status_code != 200:
-                return "Ошибка связи с сайтом"
+            for i in range(1, len(groups), 2):
+                group_num = groups[i].strip()
+                streets = groups[i+1].strip() if i+1 < len(groups) else ""
+                schedule_dict[group_num] = streets
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Ищем текст, где упоминается номер группы
-            # Обычно результат поиска выводится в блоке с определенным классом или просто текстом
-            results_text = soup.get_text()
-            
-            # Ищем регулярным выражением формат "1.1 група", "Група 2.2" и т.д.
-            match = re.search(r'(\d\.\d)\s*група', results_text, re.IGNORECASE)
-            if not match:
-                match = re.search(r'група\s*(\d\.\d)', results_text, re.IGNORECASE)
+        return schedule_dict
 
-            if match:
-                return match.group(1)
-            else:
-                return "Группа не найдена (проверьте название улицы)"
+    def save_to_json(self, data):
+        if data:
+            with open('schedule.json', 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print("Файл schedule.json успешно обновлен!")
 
-        except Exception as e:
-            return f"Ошибка парсинга: {str(e)}"
-
-    def get_full_schedule(self):
-        """Получает текущие часы отключений (если они есть текстом)"""
-        try:
-            response = self.scraper.get("https://www.toe.com.ua/news/71", headers=self.headers)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # На сайте ТОЕ график часто идет картинкой, 
-            # но под ней бывает текстовое описание периодов.
-            content = soup.find('div', {'class': 'item-page'})
-            if content:
-                return content.get_text(separator='\n', strip=True)
-            return "Не удалось получить текстовый график"
-            
-        except Exception as e:
-            return f"Ошибка: {str(e)}"
-
-# --- ПРИМЕР ИСПОЛЬЗОВАНИЯ ---
 if __name__ == "__main__":
-    parser = TernopilLightParser()
-    
-    # Замените на улицу из вашего списка
-    street = "Тарнавського" 
-    group = parser.get_group_by_street(street)
-    
-    print(f"Результат для '{street}': {group}")
+    parser = TernopilParser()
+    new_data = parser.get_actual_data()
+    if new_data:
+        parser.save_to_json(new_data)
+    else:
+        print("Не удалось получить новые данные.")
