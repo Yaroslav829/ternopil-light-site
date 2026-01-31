@@ -1,73 +1,68 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+import cloudscraper
+from bs4 import BeautifulSoup
+import re
 
-async function getTernopilLightData() {
-    const url = "https://www.toe.com.ua/news/71";
+class TernopilLightParser:
+    def __init__(self):
+        # Используем cloudscraper для обхода блокировок
+        self.scraper = cloudscraper.create_scraper()
+        self.base_url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.toe.com.ua/'
+        }
+
+    def get_group_by_street(self, street_name):
+        """Находит группу для конкретной улицы через внутренний поиск сайта"""
+        try:
+            # Отправляем POST запрос, как это делает форма на сайте
+            payload = {'search': street_name}
+            response = self.scraper.post(self.base_url, data=payload, headers=self.headers)
+            
+            if response.status_code != 200:
+                return "Ошибка связи с сайтом"
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Ищем текст, где упоминается номер группы
+            # Обычно результат поиска выводится в блоке с определенным классом или просто текстом
+            results_text = soup.get_text()
+            
+            # Ищем регулярным выражением формат "1.1 група", "Група 2.2" и т.д.
+            match = re.search(r'(\d\.\d)\s*група', results_text, re.IGNORECASE)
+            if not match:
+                match = re.search(r'група\s*(\d\.\d)', results_text, re.IGNORECASE)
+
+            if match:
+                return match.group(1)
+            else:
+                return "Группа не найдена (проверьте название улицы)"
+
+        except Exception as e:
+            return f"Ошибка парсинга: {str(e)}"
+
+    def get_full_schedule(self):
+        """Получает текущие часы отключений (если они есть текстом)"""
+        try:
+            response = self.scraper.get("https://www.toe.com.ua/news/71", headers=self.headers)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # На сайте ТОЕ график часто идет картинкой, 
+            # но под ней бывает текстовое описание периодов.
+            content = soup.find('div', {'class': 'item-page'})
+            if content:
+                return content.get_text(separator='\n', strip=True)
+            return "Не удалось получить текстовый график"
+            
+        except Exception as e:
+            return f"Ошибка: {str(e)}"
+
+# --- ПРИМЕР ИСПОЛЬЗОВАНИЯ ---
+if __name__ == "__main__":
+    parser = TernopilLightParser()
     
-    try {
-        // 1. Загружаем страницу
-        const { data } = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-        });
-
-        const $ = cheerio.load(data);
-        const result = {
-            lastUpdate: new Date().toISOString(),
-            groups: {}
-        };
-
-        // 2. Ищем контейнер с текстом
-        const content = $('.item-page');
-        let currentGroup = null;
-
-        // 3. Логика сбора групп и улиц
-        // Проходим по всем элементам внутри контента
-        content.find('p, span, strong').each((i, el) => {
-            const text = $(el).text().trim();
-            
-            // Регулярное выражение для поиска заголовка группы (н-р: "1.1. група" или "Група 2.1")
-            const groupMatch = text.match(/(\d\.\d)\.?\s*група/i);
-            
-            if (groupMatch) {
-                currentGroup = groupMatch[1]; // Получаем "1.1", "2.1" и т.д.
-                result.groups[currentGroup] = [];
-            } else if (currentGroup && text.length > 5) {
-                // Если мы внутри группы, добавляем текст (список улиц)
-                // Очищаем текст от лишних переносов строк
-                const cleanText = text.replace(/\s+/g, ' ');
-                result.groups[currentGroup].push(cleanText);
-            }
-        });
-
-        // Конвертируем массивы строк в одну строку для каждой группы
-        for (let group in result.groups) {
-            result.groups[group] = result.groups[group].join(' ');
-        }
-
-        return result;
-
-    } catch (error) {
-        console.error("Ошибка при парсинге сайта ТОЕ:", error.message);
-        return null;
-    }
-}
-
-// Пример функции поиска улицы в группах
-async function findGroupByStreet(streetName) {
-    const data = await getTernopilLightData();
-    if (!data) return "Ошибка получения данных";
-
-    const searchName = streetName.toLowerCase();
-    for (let [group, streets] of Object.entries(data.groups)) {
-        if (streets.toLowerCase().includes(searchName)) {
-            return `Улица найденна в группе: ${group}`;
-        }
-    }
-    return "Группа для данной улицы не найдена";
-}
-
-// Запуск для проверки
-getTernopilLightData().then(res => console.log(JSON.stringify(res, null, 2)));
-
+    # Замените на улицу из вашего списка
+    street = "Тарнавського" 
+    group = parser.get_group_by_street(street)
+    
+    print(f"Результат для '{street}': {group}")
