@@ -1,56 +1,74 @@
 import cloudscraper
 from bs4 import BeautifulSoup
 import json
-import re
+from datetime import datetime
 
-class TernopilParser:
-    def __init__(self):
-        self.scraper = cloudscraper.create_scraper()
-        self.url_news = "https://www.toe.com.ua/news/71"
-        self.url_search = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
+# Наші перевірені адреси
+ADDRESSES = {
+    "1.1": {"city": "Чортків", "street": "Гоголя", "house": "1"},
+    "1.2": {"city": "Тернопіль", "street": "Миру", "house": "2"},
+    "2.1": {"city": "Кременець", "street": "Вишнівецька", "house": "1"},
+    "2.2": {"city": "Тернопіль", "street": "Руська", "house": "10"},
+    "3.1": {"city": "Скалат", "street": "Грушевського", "house": "1"},
+    "3.2": {"city": "Тернопіль", "street": "Київська", "house": "8"},
+    "4.1": {"city": "Тернопіль", "street": "Збаразька", "house": "5"},
+    "4.2": {"city": "Тернопіль", "street": "Галицька", "house": "5"},
+    "5.1": {"city": "Йосипівка", "street": "Центральна", "house": "1"},
+    "5.2": {"city": "Тернопіль", "street": "Стуса", "house": "1"},
+    "6.1": {"city": "Данилівці", "street": "Головна", "house": "1"},
+    "6.2": {"city": "Борщів", "street": "Мазепи", "house": "1"}
+}
 
-    def get_actual_data(self):
-        print("Подключение к сайту ТОЕ...")
-        response = self.scraper.get(self.url_news)
-        if response.status_code != 200:
-            print("Ошибка доступа к сайту")
-            return None
-
+def get_schedule(addr):
+    scraper = cloudscraper.create_scraper()
+    url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
+    payload = {
+        'city': addr['city'],
+        'street': addr['street'],
+        'house': addr['house'],
+        'submit': 'Пошук'
+    }
+    
+    try:
+        response = scraper.post(url, data=payload, timeout=15)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # 1. Пытаемся найти ссылку на актуальный график (картинку)
-        img_tag = soup.find('img', src=re.compile(r'grafik', re.I))
-        if img_tag:
-            img_url = "https://www.toe.com.ua" + img_tag['src']
-            print(f"Найдена ссылка на новый график: {img_url}")
-            # Здесь можно добавить код для скачивания в graph.png
-
-        # 2. Собираем группы и улицы (теперь это большой текстовый блок)
-        content = soup.find('div', {'class': 'item-page'})
-        schedule_dict = {}
+        # Шукаємо всі блоки годин (зазвичай це div-и з певними стилями)
+        hours = []
+        # На сайті ТОЕ колір зазвичай у стилі background-color
+        cells = soup.find_all('div', style=True)
         
-        if content:
-            text = content.get_text(separator="\n")
-            # Разбиваем текст по группам (1.1, 1.2 и т.д.)
-            groups = re.split(r'(\d\.\d)\s*група/підгрупа', text)
-            
-            for i in range(1, len(groups), 2):
-                group_num = groups[i].strip()
-                streets = groups[i+1].strip() if i+1 < len(groups) else ""
-                schedule_dict[group_num] = streets
+        # Фільтруємо лише ті блоки, що схожі на комірки графіка (00:00, 01:00...)
+        # Логіка: шукаємо колір #000033 (вимкнено) або сірий (можливо)
+        for cell in cells:
+            if "00:00" in cell.text or "01:00" in cell.text: # Перевірка, що це комірка часу
+                style = cell['style'].lower()
+                if "#000033" in style: # Темно-синій
+                    hours.append(2)
+                elif "gray" in style or "linear-gradient" in style: # Сірий/Штриховка
+                    hours.append(1)
+                else:
+                    hours.append(0)
+        
+        # Якщо знайшли 24 години — повертаємо, інакше — заглушка
+        return hours[:24] if len(hours) >= 24 else [0]*24
+    except Exception as e:
+        print(f"Помилка при запиті: {e}")
+        return [0]*24
 
-        return schedule_dict
+# Збір даних
+final_data = {}
+for group, addr in ADDRESSES.items():
+    print(f"Парсинг групи {group}...")
+    final_data[group] = get_schedule(addr)
 
-    def save_to_json(self, data):
-        if data:
-            with open('schedule.json', 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            print("Файл schedule.json успешно обновлен!")
+# Запис у файл
+output = {
+    "last_update": datetime.now().strftime("%d.%m.%Y %H:%M"),
+    "groups": final_data
+}
 
-if __name__ == "__main__":
-    parser = TernopilParser()
-    new_data = parser.get_actual_data()
-    if new_data:
-        parser.save_to_json(new_data)
-    else:
-        print("Не удалось получить новые данные.")
+with open('schedule.json', 'w', encoding='utf-8') as f:
+    json.dump(output, f, ensure_ascii=False, indent=4)
+
+print("Готово! schedule.json оновлено.")
