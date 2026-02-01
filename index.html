@@ -2,10 +2,11 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Є-Світло — Тернопіль</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#020617">
 <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2988/2988014.png">
 
@@ -13,13 +14,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
 
 <style>
-:root{--bg:#020617;--card:rgba(30,41,59,.55);--text:#fff}
+:root{--bg:#020617;--card:rgba(30,41,59,.55);--text:#fff;--accent:#38bdf8}
 .light{--bg:#f8fafc;--card:rgba(255,255,255,.75);--text:#0f172a}
-body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);transition:.3s}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);transition:.3s;user-select:none;-webkit-tap-highlight-color:transparent}
 .card{background:var(--card);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08)}
 .g{box-shadow:0 0 35px -10px #22c55e;border-color:#22c55e55}
 .r{box-shadow:0 0 35px -10px #ef4444;border-color:#ef444455}
 .y{box-shadow:0 0 35px -10px #eab308;border-color:#eab30855}
+.prog-container{background:rgba(255,255,255,.05);height:3px;width:100%;border-radius:2px;margin-top:10px;overflow:hidden}
+.prog-fill{background:#eab308;height:100%;transition:width 1s linear}
+.glass-chat{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);box-shadow:0 8px 32px rgba(56,189,248,.15)}
 </style>
 </head>
 
@@ -29,41 +33,43 @@ body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);transit
 
 <div class="flex justify-between items-center px-2">
     <div>
-        <h1 class="text-3xl font-black italic">Є-СВІТЛО</h1>
-        <p class="text-[10px] opacity-40 uppercase tracking-widest">Тернопіль</p>
+        <h1 class="text-3xl font-black italic tracking-tighter">Є-СВІТЛО</h1>
+        <p class="text-[10px] opacity-40 uppercase tracking-[0.2em]">Тернопільська обл.</p>
     </div>
     <div class="flex items-center gap-3">
-        <button onclick="theme()" class="p-2 rounded-xl card active:scale-90">
+        <button onclick="theme()" class="p-2.5 rounded-xl card active:scale-90 transition-transform">
             <span id="iconTheme">🌙</span>
         </button>
-        <div id="clock" class="text-xl font-black text-yellow-500">00:00:00</div>
+        <div id="clock" class="text-xl font-black text-yellow-500 drop-shadow-sm">00:00:00</div>
     </div>
 </div>
 
-<div id="main" class="card rounded-[2.5rem] p-8 text-center border-2 transition-all">
-    <div id="icon" class="text-7xl mb-4">⌛</div>
-    <h2 id="title" class="text-3xl font-black uppercase">...</h2>
+<div id="main" class="card rounded-[2.5rem] p-8 text-center border-2 transition-all duration-500">
+    <div id="icon" class="text-7xl mb-4 drop-shadow-md">⌛</div>
+    <h2 id="title" class="text-3xl font-black uppercase tracking-tight">Завантаження</h2>
 
-    <div class="mt-4 p-4 rounded-3xl bg-black/20 inline-block px-8 border border-white/5">
-        <p class="text-[9px] uppercase font-bold opacity-40 tracking-widest mb-1">До зміни статусу</p>
-        <div id="timer" class="text-3xl font-black font-mono">00:00:00</div>
-        <div id="next" class="text-[10px] mt-2 opacity-60"></div>
+    <div class="mt-4 p-5 rounded-3xl bg-black/20 inline-block w-full border border-white/5">
+        <p class="text-[9px] uppercase font-bold opacity-40 tracking-widest mb-1 text-white">До зміни статусу</p>
+        <div id="timer" class="text-4xl font-black font-mono tracking-wider">00:00:00</div>
+        <div id="next" class="text-[10px] mt-2 font-semibold opacity-70 uppercase text-white"></div>
+        <div class="prog-container"><div id="progBar" class="prog-fill" style="width:0%"></div></div>
     </div>
 </div>
 
 <div class="grid grid-cols-2 gap-3">
     <div class="card rounded-2xl p-4 text-center">
-        <p class="text-[9px] uppercase opacity-40 font-bold">Світло буде</p>
-        <div class="text-xl font-black text-green-400"><span id="on">0</span> год</div>
+        <p class="text-[9px] uppercase opacity-40 font-black">Світло буде</p>
+        <div class="text-2xl font-black text-green-400"><span id="on">0</span> год</div>
     </div>
     <div class="card rounded-2xl p-4 text-center">
-        <p class="text-[9px] uppercase opacity-40 font-bold">Можливе</p>
-        <div class="text-xl font-black text-yellow-400"><span id="maybe">0</span> год</div>
+        <p class="text-[9px] uppercase opacity-40 font-black">Можливе</p>
+        <div class="text-2xl font-black text-yellow-500"><span id="maybe">0</span> год</div>
     </div>
 </div>
 
-<div class="card rounded-2xl p-4">
-    <select id="group" class="w-full bg-transparent text-yellow-500 font-black text-center outline-none">
+<div class="card rounded-2xl p-4 flex items-center px-6">
+    <span class="text-[10px] font-black opacity-30 uppercase">Черга:</span>
+    <select id="group" class="w-full bg-transparent text-yellow-500 font-black text-center text-lg outline-none cursor-pointer">
         <option>1.1</option><option>1.2</option>
         <option>2.1</option><option>2.2</option>
         <option>3.1</option><option>3.2</option>
@@ -73,81 +79,99 @@ body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);transit
     </select>
 </div>
 
-<div class="card rounded-2xl p-6">
-    <div id="line" class="flex gap-1 h-10 items-end"></div>
-    <div class="flex justify-between mt-3 text-[9px] opacity-30 font-bold">
+<div class="card rounded-[2rem] p-6 shadow-xl relative">
+    <div id="line" class="flex gap-1.5 h-10 items-end"></div>
+    <div class="flex justify-between mt-4 text-[9px] opacity-40 font-black uppercase tracking-tighter">
         <span>00:00</span><span>12:00</span><span>23:59</span>
     </div>
+</div>
+
+<div class="grid grid-cols-1 gap-3">
+    <button onclick="shareApp()" class="card py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">🚀 Надіслати другу</button>
+    <a href="https://t.me/your_username" target="_blank" class="glass-chat py-5 rounded-[1.5rem] text-xs font-black uppercase tracking-[0.2em] text-sky-400 text-center transition-all hover:scale-[1.02]">💬 Чат та Повідомити про помилку</a>
 </div>
 
 </div>
 
 <script>
-const KEY='ternopil_light';
-let data=null,last=0,alerted=false;
+const KEY='ternopil_v5';
+let data=null, last=0, alerted=false;
 
 function theme(){
-document.body.classList.toggle('light');
-localStorage.setItem('theme',document.body.classList.contains('light')?'l':'d');
+    document.body.classList.toggle('light');
+    localStorage.setItem('theme', document.body.classList.contains('light')?'l':'d');
+    document.getElementById('iconTheme').innerText = document.body.classList.contains('light')?'☀️':'🌙';
 }
 if(localStorage.getItem('theme')==='l')theme();
 
+async function shareApp(){
+    const groupVal = document.getElementById('group').value;
+    const text = `Графік світла для групи ${groupVal}. Перевір тут:`;
+    if (navigator.share) {
+        navigator.share({title:'Є-Світло', text:text, url:window.location.href});
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Посилання копійовано!');
+    }
+}
+
 async function load(){
-if(!data||Date.now()-last>300000){
-const r=await fetch('schedule.json?v='+Date.now());
-data=await r.json();last=Date.now();}
-return data;
+    if(!data||Date.now()-last>300000){
+        try {
+            const r=await fetch('schedule.json?v='+Date.now());
+            data=await r.json(); last=Date.now();
+        } catch(e) { console.log('Data error'); }
+    }
+    return data;
 }
 
 function nextHour(s,h){
-let n=(h+1)%24;
-while(s[n]===s[h]){n=(n+1)%24;if(n===h)break}
-return n;
-}
-
-function timerTo(t){
-const d=Math.max(0,t-new Date());
-timer.textContent=
-`${String(Math.floor(d/3600000)).padStart(2,'0')}:`+
-`${String(Math.floor(d%3600000/60000)).padStart(2,'0')}:`+
-`${String(Math.floor(d%60000/1000)).padStart(2,'0')}`;
+    let n=(h+1)%24;
+    while(s[n]===s[h]){n=(n+1)%24;if(n===h)break}
+    return n;
 }
 
 async function update(){
-const now=new Date(),h=now.getHours();
-clock.textContent=now.toLocaleTimeString('uk-UA',{hour12:false});
-localStorage.setItem(KEY,group.value);
+    const now=new Date(), h=now.getHours(), m=now.getMinutes(), s_sec=now.getSeconds();
+    clock.textContent=now.toLocaleTimeString('uk-UA',{hour12:false});
+    progBar.style.width = (m*60 + s_sec)/36 + '%';
+    localStorage.setItem(KEY, group.value);
 
-const g=await load();
-const s=g.groups[group.value];
-const st=s[h];
-const n=nextHour(s,h);
+    const g=await load();
+    if(!g) return;
+    const sch=g.groups[group.value];
+    const st=sch[h];
+    const n=nextHour(sch,h);
 
-const t=new Date();
-if(n<=h)t.setDate(t.getDate()+1);
-t.setHours(n,0,0,0);
-timerTo(t);
+    const target=new Date();
+    if(n<=h)target.setDate(target.getDate()+1);
+    target.setHours(n,0,0,0);
+    
+    const d=Math.max(0,target-now);
+    timer.textContent=`${String(Math.floor(d/3600000)).padStart(2,'0')}:${String(Math.floor(d%3600000/60000)).padStart(2,'0')}:${String(Math.floor(d%60000/1000)).padStart(2,'0')}`;
 
-on.textContent=s.filter(x=>x===1).length;
-maybe.textContent=s.filter(x=>x===2).length;
+    on.textContent=sch.filter(x=>x===1).length;
+    maybe.textContent=sch.filter(x=>x===2).length;
 
-main.className='card rounded-[2.5rem] p-8 text-center border-2 transition-all';
-if(st===1){main.classList.add('g');title.textContent='Світло є';icon.textContent='💡'}
-else if(st===0){main.classList.add('r');title.textContent='Вимкнено';icon.textContent='🌑'}
-else{main.classList.add('y');title.textContent='Можливо';icon.textContent='⏳'}
+    main.className='card rounded-[2.5rem] p-8 text-center border-2 transition-all duration-500';
+    if(st===1){main.classList.add('g');title.textContent='Світло є';icon.textContent='💡'}
+    else if(st===0){main.classList.add('r');title.textContent='Вимкнено';icon.textContent='🌑'}
+    else{main.classList.add('y');title.textContent='Можливо';icon.textContent='⏳'}
 
-next.textContent=s[n]===1?'Далі: світло буде':s[n]===0?'Далі: вимкнення':'Далі: можливо';
+    next.textContent=sch[n]===1?'Далі: буде світло':sch[n]===0?'Далі: вимкнення':'Далі: можливо';
 
-if(st===1&&s[n]===0&&!alerted&&((t-now)/60000)<=15){
-alert('Світло скоро вимкнуть');alerted=true;}
-if(st!==1)alerted=false;
+    if(st===1&&sch[n]===0&&!alerted&&(d/60000)<=15){
+        if(window.navigator.vibrate) window.navigator.vibrate([200,100,200]);
+        alert('За 15 хв світло вимкнуть!'); alerted=true;
+    }
+    if(st!==1)alerted=false;
 
-line.innerHTML='';
-s.forEach((x,i)=>{
-const b=document.createElement('div');
-b.className=`flex-1 rounded-full ${x===1?'bg-green-500':x===0?'bg-red-500':'bg-yellow-500'} ${i===h?'h-full':'h-1/2 opacity-20'}`;
-line.appendChild(b);
-});
+    line.innerHTML='';
+    sch.forEach((x,i)=>{
+        const b=document.createElement('div');
+        b.className=`flex-1 rounded-full ${x===1?'bg-green-500':x===0?'bg-red-500':'bg-yellow-500'} ${i===h?'h-full ring-2 ring-white shadow-lg':'h-1/2 opacity-20'}`;
+        line.appendChild(b);
+    });
 }
 
 group.value=localStorage.getItem(KEY)||'1.1';
