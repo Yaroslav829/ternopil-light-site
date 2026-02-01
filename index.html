@@ -1,153 +1,160 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Є-Світло Тернопіль</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #020617; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; }
-        .card-blur { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        /* Динамічні тіні для статусів */
-        .glow-green { box-shadow: 0 0 40px -10px rgba(34, 197, 94, 0.3); border-color: rgba(34, 197, 94, 0.4); }
-        .glow-red { box-shadow: 0 0 40px -10px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.4); }
-        .glow-yellow { box-shadow: 0 0 40px -10px rgba(234, 179, 8, 0.3); border-color: rgba(234, 179, 8, 0.4); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Є-Світло — Тернопіль</title>
 
-        .status-pulse { animation: pulse 2.5s infinite ease-in-out; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.1); filter: brightness(1.3); } }
-        
-        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-    </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#020617">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2988/2988014.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+
+<style>
+:root{--bg:#020617;--card:rgba(30,41,59,.55);--text:#fff}
+.light{--bg:#f8fafc;--card:rgba(255,255,255,.75);--text:#0f172a}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);transition:.3s}
+.card{background:var(--card);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08)}
+.g{box-shadow:0 0 35px -10px #22c55e;border-color:#22c55e55}
+.r{box-shadow:0 0 35px -10px #ef4444;border-color:#ef444455}
+.y{box-shadow:0 0 35px -10px #eab308;border-color:#eab30855}
+</style>
 </head>
-<body class="p-4">
-    <div class="max-w-md w-full space-y-6">
-        <div class="flex justify-between items-center px-2">
-            <div>
-                <h1 class="text-4xl font-extrabold tracking-tighter text-white">Є-Світло</h1>
-                <p class="text-slate-400 text-xs font-medium uppercase tracking-widest">Тернопільська обл.</p>
-            </div>
-            <div id="live-clock" class="text-2xl font-black text-yellow-500 drop-shadow-md">00:00:00</div>
-        </div>
 
-        <div id="main-card" class="card-blur rounded-[2.5rem] p-10 text-center transition-all duration-700 shadow-2xl relative overflow-hidden">
-            <div id="status-icon" class="text-7xl mb-6 status-pulse inline-block">⌛</div>
-            <h2 id="status-title" class="text-3xl font-black uppercase tracking-tighter transition-colors duration-500">Завантаження</h2>
-            <div id="status-desc" class="text-slate-300 mt-3 text-sm font-medium">Отримуємо дані з сервера...</div>
-        </div>
+<body class="p-4 min-h-screen flex items-center justify-center">
 
-        <div class="card-blur rounded-3xl p-5 flex items-center justify-between shadow-lg">
-            <span class="text-sm font-semibold text-slate-400 ml-2">Ваша підгрупа</span>
-            <div class="relative">
-                <select id="group-select" class="bg-slate-800/80 hover:bg-slate-700 text-yellow-500 font-bold rounded-2xl px-5 py-2 outline-none cursor-pointer transition-all border border-white/5">
-                    <option value="1.1">Група 1.1</option><option value="1.2">Група 1.2</option>
-                    <option value="2.1">Група 2.1</option><option value="2.2">Група 2.2</option>
-                    <option value="3.1">Група 3.1</option><option value="3.2">Група 3.2</option>
-                    <option value="4.1">Група 4.1</option><option value="4.2">Група 4.2</option>
-                    <option value="5.1">Група 5.1</option><option value="5.2">Група 5.2</option>
-                    <option value="6.1">Група 6.1</option><option value="6.2">Група 6.2</option>
-                </select>
-            </div>
-        </div>
+<div class="max-w-md w-full space-y-4">
 
-        <div class="card-blur rounded-[2rem] p-6 shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">Прогноз на добу</h3>
-                <span id="update-time" class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">--:--</span>
-            </div>
-            <div id="timeline" class="flex gap-1.5 h-16 items-end"></div>
-            <div class="flex justify-between mt-4 text-[10px] text-slate-500 font-black uppercase tracking-tighter opacity-60">
-                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <a href="https://www.toe.com.ua/" target="_blank" class="card-blur py-4 rounded-2xl text-center text-[10px] font-black uppercase tracking-[0.15em] hover:bg-white/5 transition-all active:scale-95">Офіційний сайт</a>
-            <a href="https://t.me/ternopiloblernergo_bot" target="_blank" class="card-blur py-4 rounded-2xl text-center text-[10px] font-black uppercase tracking-[0.15em] hover:bg-white/5 transition-all active:scale-95 text-sky-400">Telegram Бот</a>
-        </div>
+<div class="flex justify-between items-center px-2">
+    <div>
+        <h1 class="text-3xl font-black italic">Є-СВІТЛО</h1>
+        <p class="text-[10px] opacity-40 uppercase tracking-widest">Тернопіль</p>
     </div>
+    <div class="flex items-center gap-3">
+        <button onclick="theme()" class="p-2 rounded-xl card active:scale-90">
+            <span id="iconTheme">🌙</span>
+        </button>
+        <div id="clock" class="text-xl font-black text-yellow-500">00:00:00</div>
+    </div>
+</div>
 
-    <script>
-        const STORAGE_KEY = 'ternopil_saved_group';
-        
-        async function updateApp() {
-            const now = new Date();
-            const hour = now.getHours();
-            document.getElementById('live-clock').innerText = now.toLocaleTimeString('uk-UA', { hour12: false });
-            
-            const groupSelect = document.getElementById('group-select');
-            if (!groupSelect.dataset.initialized) {
-                groupSelect.value = localStorage.getItem(STORAGE_KEY) || "1.1";
-                groupSelect.dataset.initialized = true;
-            }
-            const selectedGroup = groupSelect.value;
-            localStorage.setItem(STORAGE_KEY, selectedGroup);
+<div id="main" class="card rounded-[2.5rem] p-8 text-center border-2 transition-all">
+    <div id="icon" class="text-7xl mb-4">⌛</div>
+    <h2 id="title" class="text-3xl font-black uppercase">...</h2>
 
-            try {
-                const response = await fetch('schedule.json?cache=' + Math.floor(Date.now()/60000));
-                const data = await response.json();
-                const schedule = data.groups[selectedGroup];
-                const currentStatus = schedule[hour];
+    <div class="mt-4 p-4 rounded-3xl bg-black/20 inline-block px-8 border border-white/5">
+        <p class="text-[9px] uppercase font-bold opacity-40 tracking-widest mb-1">До зміни статусу</p>
+        <div id="timer" class="text-3xl font-black font-mono">00:00:00</div>
+        <div id="next" class="text-[10px] mt-2 opacity-60"></div>
+    </div>
+</div>
 
-                const card = document.getElementById('main-card');
-                const title = document.getElementById('status-title');
-                const icon = document.getElementById('status-icon');
-                const desc = document.getElementById('status-desc');
-                const updateTime = document.getElementById('update-time');
+<div class="grid grid-cols-2 gap-3">
+    <div class="card rounded-2xl p-4 text-center">
+        <p class="text-[9px] uppercase opacity-40 font-bold">Світло буде</p>
+        <div class="text-xl font-black text-green-400"><span id="on">0</span> год</div>
+    </div>
+    <div class="card rounded-2xl p-4 text-center">
+        <p class="text-[9px] uppercase opacity-40 font-bold">Можливе</p>
+        <div class="text-xl font-black text-yellow-400"><span id="maybe">0</span> год</div>
+    </div>
+</div>
 
-                updateTime.innerText = `Оновлено: ${data.last_update}`;
-                card.classList.remove('glow-green', 'glow-red', 'glow-yellow');
+<div class="card rounded-2xl p-4">
+    <select id="group" class="w-full bg-transparent text-yellow-500 font-black text-center outline-none">
+        <option>1.1</option><option>1.2</option>
+        <option>2.1</option><option>2.2</option>
+        <option>3.1</option><option>3.2</option>
+        <option>4.1</option><option>4.2</option>
+        <option>5.1</option><option>5.2</option>
+        <option>6.1</option><option>6.2</option>
+    </select>
+</div>
 
-                // Логіка згідно з домовленістю: 1=Є, 0=Немає, 2=Сіра зона
-                if (currentStatus === 1) {
-                    card.classList.add('glow-green');
-                    title.innerText = "Світло є";
-                    title.className = "text-3xl font-black uppercase tracking-tighter text-green-400";
-                    icon.innerText = "💡";
-                    desc.innerText = `Група ${selectedGroup} заживлена стабільно`;
-                } else if (currentStatus === 0) {
-                    card.classList.add('glow-red');
-                    title.innerText = "Відключення";
-                    title.className = "text-3xl font-black uppercase tracking-tighter text-red-500";
-                    icon.innerText = "🌑";
-                    desc.innerText = `У групі ${selectedGroup} тривають обмеження`;
-                } else {
-                    card.classList.add('glow-yellow');
-                    title.innerText = "Можливе вимкнення";
-                    title.className = "text-3xl font-black uppercase tracking-tighter text-yellow-500";
-                    icon.innerText = "⏳";
-                    desc.innerText = `Ймовірні перебої для групи ${selectedGroup}`;
-                }
+<div class="card rounded-2xl p-6">
+    <div id="line" class="flex gap-1 h-10 items-end"></div>
+    <div class="flex justify-between mt-3 text-[9px] opacity-30 font-bold">
+        <span>00:00</span><span>12:00</span><span>23:59</span>
+    </div>
+</div>
 
-                const timeline = document.getElementById('timeline');
-                timeline.innerHTML = '';
-                schedule.forEach((status, h) => {
-                    const bar = document.createElement('div');
-                    const isActive = h === hour;
-                    
-                    // Стилізація стовпчиків
-                    let statusColor = status === 1 ? 'bg-green-500' : (status === 0 ? 'bg-red-600' : 'bg-yellow-500');
-                    let heightClass = status === 1 ? 'h-full' : (status === 0 ? 'h-1/3' : 'h-2/3');
-                    
-                    bar.className = `flex-1 ${statusColor} rounded-full transition-all duration-500 ${heightClass} ${isActive ? 'ring-4 ring-white shadow-lg opacity-100' : 'opacity-20 hover:opacity-50'}`;
-                    timeline.appendChild(bar);
-                });
-            } catch (e) { 
-                document.getElementById('status-desc').innerText = "Помилка завантаження schedule.json";
-            }
-        }
+</div>
 
-        document.getElementById('group-select').addEventListener('change', () => {
-            updateApp();
-            // Додаємо легку вібрацію при зміні (на смартфонах)
-            if (window.navigator.vibrate) window.navigator.vibrate(10);
-        });
+<script>
+const KEY='ternopil_light';
+let data=null,last=0,alerted=false;
 
-        setInterval(updateApp, 1000);
-        updateApp();
-    </script>
+function theme(){
+document.body.classList.toggle('light');
+localStorage.setItem('theme',document.body.classList.contains('light')?'l':'d');
+}
+if(localStorage.getItem('theme')==='l')theme();
+
+async function load(){
+if(!data||Date.now()-last>300000){
+const r=await fetch('schedule.json?v='+Date.now());
+data=await r.json();last=Date.now();}
+return data;
+}
+
+function nextHour(s,h){
+let n=(h+1)%24;
+while(s[n]===s[h]){n=(n+1)%24;if(n===h)break}
+return n;
+}
+
+function timerTo(t){
+const d=Math.max(0,t-new Date());
+timer.textContent=
+`${String(Math.floor(d/3600000)).padStart(2,'0')}:`+
+`${String(Math.floor(d%3600000/60000)).padStart(2,'0')}:`+
+`${String(Math.floor(d%60000/1000)).padStart(2,'0')}`;
+}
+
+async function update(){
+const now=new Date(),h=now.getHours();
+clock.textContent=now.toLocaleTimeString('uk-UA',{hour12:false});
+localStorage.setItem(KEY,group.value);
+
+const g=await load();
+const s=g.groups[group.value];
+const st=s[h];
+const n=nextHour(s,h);
+
+const t=new Date();
+if(n<=h)t.setDate(t.getDate()+1);
+t.setHours(n,0,0,0);
+timerTo(t);
+
+on.textContent=s.filter(x=>x===1).length;
+maybe.textContent=s.filter(x=>x===2).length;
+
+main.className='card rounded-[2.5rem] p-8 text-center border-2 transition-all';
+if(st===1){main.classList.add('g');title.textContent='Світло є';icon.textContent='💡'}
+else if(st===0){main.classList.add('r');title.textContent='Вимкнено';icon.textContent='🌑'}
+else{main.classList.add('y');title.textContent='Можливо';icon.textContent='⏳'}
+
+next.textContent=s[n]===1?'Далі: світло буде':s[n]===0?'Далі: вимкнення':'Далі: можливо';
+
+if(st===1&&s[n]===0&&!alerted&&((t-now)/60000)<=15){
+alert('Світло скоро вимкнуть');alerted=true;}
+if(st!==1)alerted=false;
+
+line.innerHTML='';
+s.forEach((x,i)=>{
+const b=document.createElement('div');
+b.className=`flex-1 rounded-full ${x===1?'bg-green-500':x===0?'bg-red-500':'bg-yellow-500'} ${i===h?'h-full':'h-1/2 opacity-20'}`;
+line.appendChild(b);
+});
+}
+
+group.value=localStorage.getItem(KEY)||'1.1';
+group.onchange=update;
+setInterval(update,1000);
+update();
+</script>
+
 </body>
 </html>
-
-
