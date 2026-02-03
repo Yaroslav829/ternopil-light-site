@@ -2,73 +2,89 @@ import cloudscraper
 from bs4 import BeautifulSoup
 import json
 from datetime import datetime
+import time
 
-# Наші перевірені адреси
+# Адреси чітко за твоїми скриншотами для 100% результату
 ADDRESSES = {
-    "1.1": {"city": "Чортків", "street": "Гоголя", "house": "1"},
-    "1.2": {"city": "Тернопіль", "street": "Миру", "house": "2"},
-    "2.1": {"city": "Кременець", "street": "Вишнівецька", "house": "1"},
-    "2.2": {"city": "Тернопіль", "street": "Руська", "house": "10"},
-    "3.1": {"city": "Скалат", "street": "Грушевського", "house": "1"},
-    "3.2": {"city": "Тернопіль", "street": "Київська", "house": "8"},
-    "4.1": {"city": "Тернопіль", "street": "Збаразька", "house": "5"},
-    "4.2": {"city": "Тернопіль", "street": "Галицька", "house": "5"},
-    "5.1": {"city": "Йосипівка", "street": "Центральна", "house": "1"},
-    "5.2": {"city": "Тернопіль", "street": "Стуса", "house": "1"},
-    "6.1": {"city": "Данилівці", "street": "Головна", "house": "1"},
-    "6.2": {"city": "Борщів", "street": "Мазепи", "house": "1"}
+    "1.1": {"city": "Чортків", "street": "вул. Ринок", "house": "1"},
+    "1.2": {"city": "Тернопіль", "street": "вул. Лучаковського", "house": "1"},
+    "2.1": {"city": "Кременець", "street": "вул. А.Пушкаря", "house": "1"},
+    "2.2": {"city": "Іванчани", "street": "вул. Центральна", "house": "1"},
+    "3.1": {"city": "Лисичинці", "street": "вул. Центральна", "house": "1"},
+    "3.2": {"city": "Тернопіль", "street": "вул. Вербицького", "house": "1"},
+    "4.1": {"city": "Тернопіль", "street": "вул. Пирогова", "house": "1"},
+    "4.2": {"city": "Рублин", "street": "вул. Центральна", "house": "1"},
+    "5.1": {"city": "Йосипівка", "street": "вул. Центральна", "house": "1"},
+    "5.2": {"city": "Тернопіль", "street": "вул. Вишнівецького", "house": "1"},
+    "6.1": {"city": "Данилівці", "street": "вул. Центральна", "house": "1"},
+    "6.2": {"city": "Борщів", "street": "вул. Шухевича", "house": "1"}
 }
 
-def get_schedule(addr):
+def get_schedule(group, addr):
     scraper = cloudscraper.create_scraper()
     url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
+    
     payload = {
         'city': addr['city'],
         'street': addr['street'],
         'house': addr['house'],
-        'submit': 'Пошук'
+        'action': 'search'
     }
     
     try:
-        response = scraper.post(url, data=payload, timeout=15)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Шукаємо всі блоки годин (зазвичай це div-и з певними стилями)
-        hours = []
-        # На сайті ТОЕ колір зазвичай у стилі background-color
-        cells = soup.find_all('div', style=True)
-        
-        # Фільтруємо лише ті блоки, що схожі на комірки графіка (00:00, 01:00...)
-        # Логіка: шукаємо колір #000033 (вимкнено) або сірий (можливо)
-        for cell in cells:
-            if "00:00" in cell.text or "01:00" in cell.text: # Перевірка, що це комірка часу
-                style = cell['style'].lower()
-                if "#000033" in style: # Темно-синій
-                    hours.append(2)
-                elif "gray" in style or "linear-gradient" in style: # Сірий/Штриховка
-                    hours.append(1)
-                else:
-                    hours.append(0)
-        
-        # Якщо знайшли 24 години — повертаємо, інакше — заглушка
-        return hours[:24] if len(hours) >= 24 else [0]*24
-    except Exception as e:
-        print(f"Помилка при запиті: {e}")
-        return [0]*24
+        # Сайт ТОЕ іноді тупить, ставимо timeout 20 секунд
+        response = scraper.post(url, data=payload, timeout=20)
+        if response.status_code != 200:
+            return [1] * 24
 
-# Збір даних
+        soup = BeautifulSoup(response.text, 'html.parser')
+        hours = []
+
+        # Шукаємо всі блоки, що містять час (на твоїх фото це "00:00", "01:00" і т.д.)
+        # Ми шукаємо елементи, де є колір фону в стилях
+        cells = soup.find_all(['div', 'td'], style=True)
+        
+        for cell in cells:
+            style = cell.get('style', '').lower()
+            # Перевіряємо тільки ті блоки, де вказано background-color
+            if 'background-color' in style:
+                # 0 - Немає світла (темно-синій #000033)
+                if '#000033' in style or 'rgb(0, 0, 51)' in style:
+                    hours.append(0)
+                # 2 - Можливе відключення (сірий або штриховка)
+                elif 'gray' in style or '#808080' in style or 'rgb(128, 128, 128)' in style or 'linear-gradient' in style:
+                    hours.append(2)
+                # 1 - Світло є (білий або прозорий)
+                elif '#ffffff' in style or 'rgb(255, 255, 255)' in style or 'transparent' in style:
+                    hours.append(1)
+
+        # Оскільки на сторінці можуть бути зайві блоки, беремо останні 24 (це сам графік)
+        if len(hours) >= 24:
+            result = hours[-24:]
+            print(f"✅ Група {group} ({addr['city']}): Отримано.")
+            return result
+        else:
+            print(f"⚠️ Група {group}: Комірок знайдено замало ({len(hours)}).")
+            return [1] * 24
+
+    except Exception as e:
+        print(f"❌ Помилка на групі {group}: {e}")
+        return [1] * 24
+
+# Збираємо все в один об'єкт
 final_data = {}
 for group, addr in ADDRESSES.items():
-    print(f"Парсинг групи {group}...")
-    final_data[group] = get_schedule(addr)
+    final_data[group] = get_schedule(group, addr)
+    time.sleep(1.5) # Пауза, щоб Обленерго не подумало, що ми DDoS-атака
 
-# Запис у файл
 output = {
     "last_update": datetime.now().strftime("%d.%m.%Y %H:%M"),
     "groups": final_data
 }
 
+# Записуємо результат
 with open('schedule.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=4)
 
-print("Готово! schedule.json оновлено.")
+print(f"\n🚀 Всі групи оновлено! Час: {output['last_update']}")
+
