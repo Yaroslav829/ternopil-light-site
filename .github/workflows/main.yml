@@ -1,0 +1,38 @@
+name: Auto Update Schedule
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Запускати кожну 30-ту хвилину (автоматично)
+  workflow_dispatch:      # Дозволяє запустити вручну кнопкою (для тесту)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    # Це дає роботу право оновлювати файли у твоєму репозиторії
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 cloudscraper
+
+      - name: Run parser
+        run: python parser.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "actions@github.com"
+          git add schedule.json
+          git commit -m "Авто-оновлення: $(date +'%d.%m.%Y %H:%M')" || exit 0
+          git push
