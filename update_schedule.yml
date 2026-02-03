@@ -1,34 +1,31 @@
-name: Update Schedule
-
+name: Auto Update Schedule
 on:
   schedule:
-    - cron: '0 * * * *' # Запускати щогодини (на початку кожної години)
-  workflow_dispatch: # Дозволяє запускати вручную кнопкою
+    - cron: '30 * * * *' # Запуск кожні півгодини (на 30-й хвилині)
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/checkout@v3 # Використовуємо Python
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: |
-          pip install cloudscraper beautifulsoup4
+        run: pip install requests beautifulsoup4 cloudscraper
 
       - name: Run parser
-        run: python parser.py # Тут назва твого файлу зі скриптом
+        run: python parser.py
 
-      - name: Commit and push changes
+      - name: Commit and push
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "SvitloBot"
+          git config --global user.email "bot@example.com"
           git add schedule.json
-          git commit -m "Автоматичне оновлення графіка: $(date)" || echo "Немає змін для коміту"
+          git commit -m "Auto-update schedule $(date)" || exit 0
           git push
