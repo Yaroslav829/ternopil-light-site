@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 import time
+import ssl
 
 ADDRESSES = {
     "1.1": {"city": "Чортків", "street": "вул. Ринок", "house": "1"},
@@ -20,33 +21,64 @@ ADDRESSES = {
 }
 
 def get_schedule(group, addr):
-    scraper = cloudscraper.create_scraper()
+    # Налаштовуємо скрейпер для обходу Cloudflare
+    scraper = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'desktop': True
+        }
+    )
+    
     url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
     payload = {'city': addr['city'], 'street': addr['street'], 'house': addr['house'], 'action': 'search'}
     
     try:
-        response = scraper.post(url, data=payload, timeout=25)
+        # Робимо запит з імітацією реального браузера
+        response = scraper.post(url, data=payload, timeout=30, verify=False)
+        
+        # Якщо нас заблокував Cloudflare (код 403), повертаємо 1
+        if response.status_code != 200:
+            print(f"⚠️ Група {group}: Сайт повернув статус {response.status_code}")
+            return [1] * 24
+
         soup = BeautifulSoup(response.text, 'html.parser')
         hours_data = []
         
-        # Шукаємо блоки з часом та кольором (плитки)
-        for el in soup.find_all(True, style=True):
-            txt = el.get_text(strip=True)
+        # Шукаємо елементи з кольором фону (твої плитки на фото)
+        cells = soup.find_all(True, style=True)
+        for cell in cells:
+            txt = cell.get_text(strip=True)
             if len(txt) == 5 and txt[2] == ':':
-                style = el.get('style', '').lower()
-                # 0 - НЕМАЄ (Синій), 2 - МОЖЛИВО (Сірий), 1 - Є (Білий)
-                if '0, 0, 51' in style or '#000033' in style: hours_data.append(0)
-                elif 'gray' in style or 'gradient' in style or '80, 80, 80' in style: hours_data.append(2)
-                else: hours_data.append(1)
-        
-        if len(hours_data) >= 24: return hours_data[-24:]
+                style = cell.get('style', '').lower()
+                # 0 - НЕМАЄ (темно-синій), 2 - МОЖЛИВО (сірий/градієнт), 1 - Є (білий)
+                if '0, 0, 51' in style or '#000033' in style:
+                    hours_data.append(0)
+                elif '80, 80, 80' in style or '#808080' in style or 'linear-gradient' in style:
+                    hours_data.append(2)
+                else:
+                    hours_data.append(1)
+
+        if len(hours_data) >= 24:
+            return hours_data[-24:]
+            
         return [1] * 24
-    except:
+    except Exception as e:
+        print(f"❌ Помилка {group}: {e}")
         return [1] * 24
 
-results = {g: get_schedule(g, a) for g, a in ADDRESSES.items()}
-output = {"last_update": datetime.now().strftime("%d.%m.%Y %H:%M"), "groups": results}
+# Збір даних для всіх груп
+results = {}
+for g, a in ADDRESSES.items():
+    print(f"🚀 Спроба отримати дані для черги {g}...")
+    results[g] = get_schedule(g, a)
+    time.sleep(2) # Збільшуємо паузу, щоб не викликати підозру у Cloudflare
+
+output = {
+    "last_update": datetime.now().strftime("%d.%m.%Y %H:%M"),
+    "groups": results
+}
 
 with open('schedule.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=4)
-
+print(f"✅ Готово! Оновлено о {output['last_update']}")
