@@ -29,48 +29,24 @@ def get_schedule(group, addr):
         soup = BeautifulSoup(response.text, 'html.parser')
         hours_data = []
         
-        # Шукаємо абсолютно ВСІ елементи, які мають колір фону
-        elements = soup.find_all(True, style=True)
+        # Шукаємо блоки з часом та кольором (плитки)
+        for el in soup.find_all(True, style=True):
+            txt = el.get_text(strip=True)
+            if len(txt) == 5 and txt[2] == ':':
+                style = el.get('style', '').lower()
+                # 0 - НЕМАЄ (Синій), 2 - МОЖЛИВО (Сірий), 1 - Є (Білий)
+                if '0, 0, 51' in style or '#000033' in style: hours_data.append(0)
+                elif 'gray' in style or 'gradient' in style or '80, 80, 80' in style: hours_data.append(2)
+                else: hours_data.append(1)
         
-        for el in elements:
-            style = el.get('style', '').lower()
-            text = el.get_text(strip=True)
-            
-            # Якщо в елементі або його батькові є час (напр. 08:00)
-            if (len(text) == 5 and text[2] == ':') or ("background-color" in style):
-                # СИНІЙ (Немає світла) - перевіряємо різні формати запису
-                if '0, 0, 51' in style or '#000033' in style:
-                    hours_data.append(0)
-                # СІРИЙ (Можливо)
-                elif '80, 80, 80' in style or '#808080' in style or 'gray' in style or 'gradient' in style:
-                    hours_data.append(2)
-                # БІЛИЙ (Є світло)
-                elif '255, 255, 255' in style or '#ffffff' in style or 'transparent' in style:
-                    # Додаємо тільки якщо це схоже на комірку графіка
-                    if len(hours_data) < 24:
-                        hours_data.append(1)
-
-        if len(hours_data) >= 24:
-            # Беремо останні 24, щоб не вхопити шапку таблиці
-            return hours_data[-24:]
-        
-        print(f"⚠️ Група {group}: знайдено лише {len(hours_data)} комірок. Ставлю заглушку.")
-        return [1] * 24 
-    except Exception as e:
-        print(f"❌ Помилка {group}: {e}")
+        if len(hours_data) >= 24: return hours_data[-24:]
+        return [1] * 24
+    except:
         return [1] * 24
 
-# Збір даних
-results = {}
-for g, a in ADDRESSES.items():
-    print(f"🚀 Парсинг {g}...")
-    results[g] = get_schedule(g, a)
-    time.sleep(1)
-
-output = {
-    "last_update": datetime.now().strftime("%d.%m.%Y %H:%M"),
-    "groups": results
-}
+results = {g: get_schedule(g, a) for g, a in ADDRESSES.items()}
+output = {"last_update": datetime.now().strftime("%d.%m.%Y %H:%M"), "groups": results}
 
 with open('schedule.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=4)
+
