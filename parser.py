@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 import time
 
+# Адреси без змін
 ADDRESSES = {
     "1.1": {"city": "Чортків", "street": "вул. Ринок", "house": "1"},
     "1.2": {"city": "Тернопіль", "street": "вул. Володимира Лучаковського", "house": "1"},
@@ -23,16 +24,23 @@ def get_schedule(scraper, group, addr):
     url = "https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia"
     payload = {'city': addr['city'], 'street': addr['street'], 'house': addr['house'], 'action': 'search'}
     
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Origin': 'https://www.toe.com.ua',
+        'Referer': 'https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia'
+    }
+    
     try:
-        response = scraper.post(url, data=payload, timeout=40)
-        if response.status_code != 200:
-            print(f"⚠️ {group}: Помилка {response.status_code}")
+        response = scraper.post(url, data=payload, headers=headers, timeout=45)
+        if "cloudflare" in response.text.lower() or response.status_code == 403:
+            print(f"🛑 {group}: Блокування Cloudflare")
             return [1] * 24
 
         soup = BeautifulSoup(response.text, 'html.parser')
         hours_data = []
         
-        # Шукаємо кольорові плитки
+        # Пошук кольорів плиток
         for el in soup.find_all(True, style=True):
             txt = el.get_text(strip=True)
             if len(txt) == 5 and txt[2] == ':':
@@ -41,39 +49,26 @@ def get_schedule(scraper, group, addr):
                 elif 'gray' in style or 'gradient' in style or '80, 80, 80' in style: hours_data.append(2)
                 else: hours_data.append(1)
         
-        if len(hours_data) >= 24:
-            return hours_data[-24:]
-        return [1] * 24
+        return hours_data[-24:] if len(hours_data) >= 24 else [1] * 24
     except Exception as e:
-        print(f"❌ {group}: Помилка: {e}")
+        print(f"❌ {group}: {e}")
         return [1] * 24
 
-# 1. Створюємо одну сесію для всіх запитів
-scraper = cloudscraper.create_scraper(
-    browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
-)
+# Створюємо сесію
+scraper = cloudscraper.create_scraper(delay=10)
 
-# 2. "ЗАХОДИМО" на головну сторінку і ЧЕКАЄМО 30 секунд
-print("🚀 Заходимо на сайт... Очікуємо 30 секунд для проходження перевірки Cloudflare.")
+print("⏳ Заходимо на сайт...")
 try:
-    scraper.get("https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia", timeout=30)
-except:
-    pass
-time.sleep(30)
+    scraper.get("https://www.toe.com.ua/index.php/pohodynni-vidkliuchennia")
+    time.sleep(35) # Чекаємо, поки Cloudflare "перевірить" нас
+except: pass
 
-# 3. Швидко збираємо дані (пауза лише 2 секунди між адресами)
 results = {}
 for g, a in ADDRESSES.items():
-    print(f"📡 Отримую дані для групи {g}...")
+    print(f"📡 Збір {g}...")
     results[g] = get_schedule(scraper, g, a)
-    time.sleep(2) 
+    time.sleep(5) 
 
-output = {
-    "last_update": datetime.now().strftime("%d.%m.%Y %H:%M"),
-    "groups": results
-}
-
+output = {"last_update": datetime.now().strftime("%d.%m.%Y %H:%M"), "groups": results}
 with open('schedule.json', 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=4)
-
-print(f"🏁 Готово! Оновлено о {output['last_update']}")
